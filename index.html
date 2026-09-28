@@ -1,0 +1,316 @@
+<title>Local Brief Launcher</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --navy:#0b1f3a;
+    --navy-2:#14294d;
+    --amber:#f2a93b;
+    --amber-ink:#7a4c0a;
+    --paper:#f7f5f0;
+    --card:#ffffff;
+    --ink:#141a24;
+    --ink-dim:#5b6472;
+    --line:#e4dfd3;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --navy:#0a1830;
+      --navy-2:#0f2140;
+      --amber:#f2a93b;
+      --amber-ink:#1c1206;
+      --paper:#11151c;
+      --card:#181d26;
+      --ink:#eef1f6;
+      --ink-dim:#9aa4b2;
+      --line:#2a3140;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --navy:#0a1830;
+    --navy-2:#0f2140;
+    --amber:#f2a93b;
+    --amber-ink:#1c1206;
+    --paper:#11151c;
+    --card:#181d26;
+    --ink:#eef1f6;
+    --ink-dim:#9aa4b2;
+    --line:#2a3140;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    padding-inline:16px;
+  }
+  .wrap{max-width:960px;margin:0 auto}
+
+  header.masthead{
+    background:linear-gradient(160deg,var(--navy),var(--navy-2));
+    color:#fff;
+    margin-inline:-16px;
+    padding:28px 16px 22px;
+    border-bottom:4px solid var(--amber);
+  }
+  .masthead-inner{max-width:960px;margin:0 auto}
+  .kicker{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--amber);
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:6px;
+  }
+  .kicker .dot{width:6px;height:6px;border-radius:50%;background:var(--amber)}
+  h1{
+    font-family:"Big Shoulders Display",sans-serif;
+    font-weight:800;
+    font-size:clamp(34px,7vw,56px);
+    line-height:.95;
+    margin:0 0 8px;
+    text-transform:uppercase;
+    letter-spacing:.01em;
+  }
+  h1 span{color:var(--amber)}
+  .dek{
+    font-size:15px;
+    color:#d7deee;
+    max-width:60ch;
+    line-height:1.5;
+  }
+
+  main{padding:28px 0 60px;display:grid;gap:20px;grid-template-columns:1.3fr 1fr}
+  @media (max-width:720px){ main{grid-template-columns:1fr} }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px;
+  }
+  .card h2{
+    font-family:"Big Shoulders Display",sans-serif;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    font-size:20px;
+    margin:0 0 4px;
+  }
+  .card p.muted{color:var(--ink-dim);font-size:13.5px;line-height:1.55;margin:0 0 16px}
+
+  .launch-row{display:flex;flex-direction:column;gap:10px}
+  .btn{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:14px 16px;border-radius:8px;border:1px solid var(--line);
+    background:var(--paper);color:var(--ink);text-decoration:none;
+    font-weight:600;font-size:15px;
+    transition:transform .08s ease, border-color .15s ease;
+  }
+  .btn:hover{border-color:var(--amber);transform:translateY(-1px)}
+  .btn .plat{display:flex;flex-direction:column;gap:2px}
+  .btn .plat small{font-weight:400;color:var(--ink-dim);font-size:11.5px}
+  .btn .arrow{font-family:"IBM Plex Mono",monospace;color:var(--amber-ink);background:var(--amber);
+    width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+
+  .fallback{
+    margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  }
+  .fallback p{margin:0;font-size:12.5px;color:var(--ink-dim);max-width:38ch}
+  button.copy{
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:500;
+    background:var(--navy);color:#fff;border:none;border-radius:6px;
+    padding:9px 14px;cursor:pointer;white-space:nowrap;
+  }
+  button.copy:active{transform:scale(.98)}
+  button.copy[data-copied="true"]{background:#2e7d4f}
+
+  details{margin-top:14px}
+  summary{
+    cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:12px;
+    color:var(--ink-dim);letter-spacing:.04em;text-transform:uppercase;
+  }
+  pre{
+    margin-top:10px;background:var(--paper);border:1px solid var(--line);border-radius:8px;
+    padding:14px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.6;
+    white-space:pre-wrap;word-break:break-word;color:var(--ink);
+    max-height:260px;overflow-y:auto;
+  }
+
+  .qr-card{text-align:center}
+  #qr{
+    display:inline-block;padding:12px;background:#fff;border-radius:8px;
+    border:1px solid var(--line);
+  }
+  .qr-card .url{
+    margin-top:12px;font-family:"IBM Plex Mono",monospace;font-size:11px;
+    color:var(--ink-dim);word-break:break-all;
+  }
+
+  .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .steps li{display:flex;gap:10px;font-size:13.5px;line-height:1.5;color:var(--ink)}
+  .steps .num{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;
+    background:var(--navy);color:#fff;width:20px;height:20px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px;
+  }
+</style>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="kicker"><span class="dot"></span>ZERO-INFRA · RUNS ON YOUR OWN FREE ACCOUNT</div>
+    <h1>Local Brief<br><span>Launcher</span></h1>
+    <p class="dek">One prompt, no app, no server. Open it in Claude or ChatGPT and it researches
+      real sports, culture, weather and traffic near any location — today, automatically.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <main>
+    <div class="card">
+      <h2>Open the brief</h2>
+      <p class="muted">Picks up today's date on its own — it'll just ask you where to center the brief.</p>
+      <div class="launch-row">
+        <a class="btn" id="btn-claude" target="_blank" rel="noopener">
+          <span class="plat">Open in Claude<small>claude.ai — free tier works</small></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="btn" id="btn-chatgpt" target="_blank" rel="noopener">
+          <span class="plat">Open in ChatGPT<small>chatgpt.com — free tier works</small></span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+
+      <div class="fallback">
+        <p>If the chat box doesn't prefill on your platform's current version, copy the prompt and paste it in instead.</p>
+        <button class="copy" id="copy-btn" type="button">Copy prompt</button>
+      </div>
+
+      <details>
+        <summary>View the raw prompt</summary>
+        <pre id="prompt-text"></pre>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>How it works</h2>
+      <ul class="steps">
+        <li><span class="num">1</span>Tap a button above — it opens a fresh chat with the brief prompt already typed in.</li>
+        <li><span class="num">2</span>Send it. The assistant asks for a location if you didn't give one.</li>
+        <li><span class="num">3</span>It searches for real, dated local events, weather and traffic — never invented ones.</li>
+        <li><span class="num">4</span>It renders a one-page brief, then offers to change location, date or categories.</li>
+      </ul>
+    </div>
+  </main>
+
+  <div class="card qr-card" style="margin-bottom:40px">
+    <h2>Scan on your phone</h2>
+    <p class="muted">Opens this same launcher page.</p>
+    <div id="qr"></div>
+    <div class="url" id="qr-url"></div>
+  </div>
+</div>
+
+<script>
+  const PROMPT = "# NEWS-BOT Local Brief — Agent Prompt\n\n" +
+"You generate a \"Local Brief\" — a one-page infographic-style digest of what's\n" +
+"happening right now around a place the user gives you: sports/games, culture\n" +
+"events, weather, and traffic/transit alerts.\n\n" +
+"## 1. Intake\n" +
+"- If the user already named a location in their message, use it. Otherwise,\n" +
+"  ask ONE short question: \"What location should I center the brief on? (a\n" +
+"  city, neighborhood, address, or landmark works.)\"\n" +
+"- Date: ALWAYS use today's actual current date automatically. Never ask the\n" +
+"  user for a date. Only use a different date if the user explicitly names one\n" +
+"  (\"next Saturday\", \"October 12th\", etc.).\n" +
+"- Do not ask about categories up front — default to all of: Sports, Culture,\n" +
+"  Weather, Traffic/Transit. The user can add/remove categories afterward.\n\n" +
+"## 2. Research (do this for every brief, every time — never skip)\n" +
+"Use web search to find REAL, current, dated information near the given\n" +
+"location for today's date:\n" +
+"- Sports/games: professional/college teams whose venue is near the location,\n" +
+"  with actual scheduled times.\n" +
+"- Culture/community: gallery, museum, theater, or notable public events.\n" +
+"- Weather: today's forecast for that specific location.\n" +
+"- Traffic/transit: any active closures, delays, or advisories relevant to\n" +
+"  getting around that location today.\n\n" +
+"Rules:\n" +
+"- Never invent an event, score, time, or forecast. If search turns up nothing\n" +
+"  verifiable for a category, say so plainly in that section (\"No major\n" +
+"  scheduled events found nearby today\") rather than filling the space with a\n" +
+"  plausible-sounding guess.\n" +
+"- Prefer official sources (team/venue sites, city/transit agency pages,\n" +
+"  weather services) over aggregator blogs when they conflict.\n" +
+"- Note each fact's source inline or in a short source list — this is what\n" +
+"  lets the user sanity-check anything that looks off.\n" +
+"- Distances/proximity: only state a distance or \"X miles away\" if you have it\n" +
+"  from a real source (venue address, search result). If you don't, describe\n" +
+"  position qualitatively (\"a few blocks north\") or omit it — don't fabricate\n" +
+"  precise mileage.\n\n" +
+"## 3. Render\n" +
+"Detect what you can render and pick accordingly:\n" +
+"- If you can produce a rendered HTML/CSS artifact (e.g. Claude Artifacts):\n" +
+"  build a one-page infographic with: a header banner (title + the location +\n" +
+"  today's date), a map/location panel, and category cards for Sports,\n" +
+"  Culture, Weather & Traffic, styled as clean colored panels — mirroring a\n" +
+"  local-news-brief layout. Keep all text real data pulled from step 2; no\n" +
+"  placeholder or invented numbers.\n" +
+"- If you cannot render arbitrary HTML (e.g. plain ChatGPT chat without\n" +
+"  Canvas): produce a clean, well-formatted Markdown brief with the same\n" +
+"  section structure (bolded headers, bullet facts, a short \"sources\" line per\n" +
+"  section) — optimize for readability, not for imitating pixels you can't\n" +
+"  control.\n" +
+"- Either way, keep it to one screen's worth of content — this is a brief, not\n" +
+"  a report.\n\n" +
+"## 4. Offer follow-ups\n" +
+"After rendering, ask (briefly, one line): \"Want me to change the location,\n" +
+"move to a different date, or focus on specific categories?\" Then loop back to\n" +
+"step 2 for whatever changed — don't re-ask things that didn't change.\n";
+
+  document.getElementById("prompt-text").textContent = PROMPT;
+
+  const encoded = encodeURIComponent(PROMPT);
+  document.getElementById("btn-claude").href = "https://claude.ai/new?q=" + encoded;
+  document.getElementById("btn-chatgpt").href = "https://chatgpt.com/?q=" + encoded;
+
+  const copyBtn = document.getElementById("copy-btn");
+  copyBtn.addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(PROMPT);
+      copyBtn.textContent = "Copied";
+      copyBtn.dataset.copied = "true";
+    }catch(e){
+      const ta = document.createElement("textarea");
+      ta.value = PROMPT;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try{ document.execCommand("copy"); copyBtn.textContent = "Copied"; copyBtn.dataset.copied = "true"; }
+      catch(err){ copyBtn.textContent = "Select & copy the box below"; }
+      document.body.removeChild(ta);
+    }
+    setTimeout(() => { copyBtn.textContent = "Copy prompt"; copyBtn.dataset.copied = "false"; }, 2200);
+  });
+
+  try{
+    const url = window.location.href;
+    document.getElementById("qr-url").textContent = url;
+    new QRCode(document.getElementById("qr"), {
+      text: url, width: 148, height: 148,
+      colorDark: "#0b1f3a", colorLight: "#ffffff"
+    });
+  }catch(e){
+    document.getElementById("qr").textContent = "QR unavailable — use the link above.";
+  }
+</script>
