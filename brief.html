@@ -80,9 +80,11 @@ button{font:inherit;cursor:pointer}
 .leaflet-tooltip.here{background:#e03c31;text-align:center}
 .leaflet-tooltip.plabel small,.leaflet-tooltip.here small{display:block;font-weight:500;opacity:.9}
 .leaflet-tooltip.plabel::before,.leaflet-tooltip.here::before{display:none}
-.pop{font:14px/1.4 Barlow,sans-serif;min-width:180px}
-.pop b{display:block;margin-bottom:6px;font-size:15px}
-.pop div{display:flex;align-items:flex-start;margin-top:5px;cursor:pointer}
+.leaflet-tooltip.plabel{pointer-events:auto;cursor:pointer}
+.flash{animation:flash 1.8s ease-out}
+.more [data-n].flash,.tr.flash,.nearby li.flash{animation:rowflash 1.8s ease-out;border-radius:6px}
+@keyframes flash{0%,35%{box-shadow:0 0 0 6px rgba(245,165,36,.95)}100%{box-shadow:0 0 0 0 rgba(245,165,36,0)}}
+@keyframes rowflash{0%,40%{background:#fff1d6}100%{background:rgba(255,241,214,0)}}
 
 .wt .wxrow{display:flex;align-items:center;gap:14px}
 .wt .wxicon{width:58px;height:58px;color:#e59a00;flex:none}
@@ -449,9 +451,18 @@ function initMap(short) {
     const txt = g.items.length > 3 ? g.items[0].n + "+" + (g.items.length - 1) : g.items.map(i => i.n).join("·");
     const mk = L.marker([g.lat, g.lon], { icon: L.divIcon({ className: "pinwrap", html: `<div class="pin" style="--c:${color}${atHome ? ";transform:translate(8px,-48px)" : ""}">${txt}</div>`, iconSize: [0, 0] }) }).addTo(map);
     const venue = (g.items[0].venue || g.items[0].title).split(",")[0];
-    mk.bindPopup(`<div class="pop"><b>${esc(venue)}</b>${g.items.map(i => `<div data-n="${i.n}"><span class="num" style="--c:${CAT[i.cat].c}">${i.n}</span><span>${esc(i.title)}${i.when ? " · " + esc(i.when) : ""}</span></div>`).join("")}</div>`, { offset: atHome ? [18, -44] : [0, -8] });
-    if (labels && !atHome) mk.bindTooltip(`${esc(venue)}<small>${fmtD(dOf(g.items[0]))}</small>`, { permanent: true, direction: "right", offset: [Math.max(14, txt.length * 3.5 + 10), 0], className: "plabel" });
-    mk.on("click", () => setHi(g.items.map(i => i.n)));
+    const go = () => goToItems(g.items.map(i => i.n));
+    mk.on("click", go);
+    if (labels && !atHome) {
+      mk.on("tooltipopen", e => {
+        const tip = e.tooltip.getElement();
+        if (!tip || tip.dataset.wired) return;
+        tip.dataset.wired = "1";
+        L.DomEvent.disableClickPropagation(tip);
+        tip.addEventListener("click", go);
+      });
+      mk.bindTooltip(`${esc(venue)}<small>${fmtD(dOf(g.items[0]))}</small>`, { permanent: true, direction: "right", offset: [Math.max(14, txt.length * 3.5 + 10), 0], className: "plabel" });
+    }
     g.items.forEach(i => { markers[i.n] = mk; });
     pts.push([g.lat, g.lon]);
   });
@@ -493,6 +504,16 @@ function setHi(ns) {
   document.querySelectorAll(".pin").forEach(p => p.classList.remove("hi"));
   (ns || []).forEach(n => { const mk = markers[n]; const el = mk && mk.getElement(); if (el) el.querySelector(".pin")?.classList.add("hi"); });
 }
+function goToItems(ns) {
+  setHi(ns);
+  const target = [...document.querySelectorAll(`[data-n="${ns[0]}"]`)].find(e => !e.closest("#map"));
+  if (!target) return;
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  target.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
+  target.classList.remove("flash");
+  void target.offsetWidth;
+  target.classList.add("flash");
+}
 function focusItem(n) {
   const it = byN[n];
   if (!it) return;
@@ -500,7 +521,6 @@ function focusItem(n) {
   const mk = markers[n];
   if (mk && map) {
     map.setView(mk.getLatLng(), Math.max(map.getZoom(), 15));
-    mk.openPopup();
     const r = $("mapcell").getBoundingClientRect();
     if (r.bottom < 60 || r.top > innerHeight - 60) $("mapcell").scrollIntoView({ behavior: "smooth", block: "center" });
   } else {
@@ -657,9 +677,7 @@ $("save").onclick = saveImage;
 $("share").onclick = share;
 $("copy").onclick = copyLink;
 document.addEventListener("click", e => {
-  if (e.target.closest("a")) return;
-  const pop = e.target.closest(".pop [data-n]");
-  if (pop) return focusItem(+pop.dataset.n);
+  if (e.target.closest("a") || e.target.closest("#map")) return;
   const sub = e.target.closest(".more [data-n], .tr[data-n], .nearby [data-n]");
   if (sub) return focusItem(+sub.dataset.n);
   const card = e.target.closest(".card[data-n]");
