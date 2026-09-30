@@ -619,23 +619,27 @@ async function photon(q, near) {
     const j = await (await fetch(u, { signal: ctl.signal })).json();
     const f = j.features && j.features[0];
     if (!f) return null;
-    const p = { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] };
+    const p = { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], type: f.properties.type || "" };
     if (near && near.lat != null && dist(near, p, false) > 60) return null;
     return p;
   } catch (e) { return null; } finally { clearTimeout(t); }
 }
+const AREA = /^(city|district|county|state|country)$/;
 async function placeItems(D) {
-  if (D.lat == null) { const p = await photon(D.loc, null); if (p) { D.lat = p.lat; D.lon = p.lon; } }
+  const here = await photon(D.loc, null);
+  if (D.lat == null && here) { D.lat = here.lat; D.lon = here.lon; }
+  // Sub-venues share the location's pin only when the location is a single building (e.g. an opera house), not an area.
+  const building = !!here && here.type === "house" && D.lat != null && dist(D, here, false) < 2;
   const short = D.loc.split(",")[0].trim().toLowerCase();
   const city = D.loc.split(",").slice(-1)[0].trim();
   const cache = {};
   const jobs = D.items.filter(it => it.lat == null && it.venue && it.cat !== "transit").map(async it => {
     const v = it.venue.trim();
-    if (D.lat != null && v.toLowerCase().includes(short)) { it.lat = D.lat; it.lon = D.lon; return; }
+    if (building && v.toLowerCase().includes(short)) { it.lat = D.lat; it.lon = D.lon; return; }
     const q = v.toLowerCase().includes(city.toLowerCase()) ? v : v + ", " + city;
     cache[q] = cache[q] || photon(q, D);
     const p = await cache[q];
-    if (p) { it.lat = p.lat; it.lon = p.lon; it.geo = true; }
+    if (p && !AREA.test(p.type)) { it.lat = p.lat; it.lon = p.lon; it.geo = true; }
   });
   await Promise.race([Promise.all(jobs), wait(5000)]);
 }
