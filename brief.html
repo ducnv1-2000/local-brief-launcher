@@ -402,7 +402,7 @@ function render(D) {
   document.title = "Local Brief · " + D.loc;
   $("bar").hidden = false;
   const cut = D.expected && D.received < D.expected
-    ? `<p class="warnbar">This link was cut off: ${D.received} of ${D.expected} events came through. For the full brief, tap Copy on the data box in your chat and paste it on the <a href="brief.html">brief page</a>.</p>` : "";
+    ? `<p class="warnbar">This link was cut off: ${D.received} of ${D.expected} events came through. For the full brief, tell the assistant "the link doesn't work", then paste the data it sends on the <a href="brief.html">brief page</a>.</p>` : "";
   const geo = D.items.some(i => i.geo) ? " Venue locations: © OpenStreetMap contributors, via Photon." : "";
   $("app").innerHTML = cut + `<div class="poster" id="poster">
     <header class="mast" id="mast">
