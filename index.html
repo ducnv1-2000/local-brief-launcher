@@ -179,7 +179,7 @@
   <main>
     <div class="card">
       <h2>Open the brief</h2>
-      <p class="muted">Picks up today's date on its own — it'll just ask you where to center the brief.</p>
+      <p class="muted">Picks up today's date on its own — it'll just ask you where to center the brief. <a href="brief.html#example">See an example brief</a>.</p>
       <div class="launch-row">
         <a class="btn" id="btn-claude" target="_blank" rel="noopener">
           <span class="plat">Open in Claude<small>claude.ai — free tier works</small></span>
@@ -208,7 +208,7 @@
         <li><span class="num">1</span>Tap a button above — it opens a fresh chat with the brief prompt already typed in.</li>
         <li><span class="num">2</span>Send it. The assistant asks for a location if you didn't give one.</li>
         <li><span class="num">3</span>It searches for real, dated local events, weather and traffic — never invented ones.</li>
-        <li><span class="num">4</span>It renders a one-page brief, then offers to change location, date or categories.</li>
+        <li><span class="num">4</span>It writes a link. Tap it to open your infographic poster with a live street map, then save it as an image.</li>
       </ul>
     </div>
   </main>
@@ -222,60 +222,7 @@
 </div>
 
 <script>
-  const PROMPT = "# NEWS-BOT Local Brief — Agent Prompt\n\n" +
-"You generate a \"Local Brief\" — a one-page infographic-style digest of what's\n" +
-"happening right now around a place the user gives you: sports/games, culture\n" +
-"events, weather, and traffic/transit alerts.\n\n" +
-"## 1. Intake\n" +
-"- If the user already named a location in their message, use it. Otherwise,\n" +
-"  ask ONE short question: \"What location should I center the brief on? (a\n" +
-"  city, neighborhood, address, or landmark works.)\"\n" +
-"- Date: ALWAYS use today's actual current date automatically. Never ask the\n" +
-"  user for a date. Only use a different date if the user explicitly names one\n" +
-"  (\"next Saturday\", \"October 12th\", etc.).\n" +
-"- Do not ask about categories up front — default to all of: Sports, Culture,\n" +
-"  Weather, Traffic/Transit. The user can add/remove categories afterward.\n\n" +
-"## 2. Research (do this for every brief, every time — never skip)\n" +
-"Use web search to find REAL, current, dated information near the given\n" +
-"location for today's date:\n" +
-"- Sports/games: professional/college teams whose venue is near the location,\n" +
-"  with actual scheduled times.\n" +
-"- Culture/community: gallery, museum, theater, or notable public events.\n" +
-"- Weather: today's forecast for that specific location.\n" +
-"- Traffic/transit: any active closures, delays, or advisories relevant to\n" +
-"  getting around that location today.\n\n" +
-"Rules:\n" +
-"- Never invent an event, score, time, or forecast. If search turns up nothing\n" +
-"  verifiable for a category, say so plainly in that section (\"No major\n" +
-"  scheduled events found nearby today\") rather than filling the space with a\n" +
-"  plausible-sounding guess.\n" +
-"- Prefer official sources (team/venue sites, city/transit agency pages,\n" +
-"  weather services) over aggregator blogs when they conflict.\n" +
-"- Note each fact's source inline or in a short source list — this is what\n" +
-"  lets the user sanity-check anything that looks off.\n" +
-"- Distances/proximity: only state a distance or \"X miles away\" if you have it\n" +
-"  from a real source (venue address, search result). If you don't, describe\n" +
-"  position qualitatively (\"a few blocks north\") or omit it — don't fabricate\n" +
-"  precise mileage.\n\n" +
-"## 3. Render\n" +
-"Detect what you can render and pick accordingly:\n" +
-"- If you can produce a rendered HTML/CSS artifact (e.g. Claude Artifacts):\n" +
-"  build a one-page infographic with: a header banner (title + the location +\n" +
-"  today's date), a map/location panel, and category cards for Sports,\n" +
-"  Culture, Weather & Traffic, styled as clean colored panels — mirroring a\n" +
-"  local-news-brief layout. Keep all text real data pulled from step 2; no\n" +
-"  placeholder or invented numbers.\n" +
-"- If you cannot render arbitrary HTML (e.g. plain ChatGPT chat without\n" +
-"  Canvas): produce a clean, well-formatted Markdown brief with the same\n" +
-"  section structure (bolded headers, bullet facts, a short \"sources\" line per\n" +
-"  section) — optimize for readability, not for imitating pixels you can't\n" +
-"  control.\n" +
-"- Either way, keep it to one screen's worth of content — this is a brief, not\n" +
-"  a report.\n\n" +
-"## 4. Offer follow-ups\n" +
-"After rendering, ask (briefly, one line): \"Want me to change the location,\n" +
-"move to a different date, or focus on specific categories?\" Then loop back to\n" +
-"step 2 for whatever changed — don't re-ask things that didn't change.\n";
+  const PROMPT = "# NEWS-BOT Local Brief\n\nYou make a NEWS-BOT Local Brief: a one-page infographic of what's happening today around a place. You do the research. A viewer page draws the infographic (poster, street map, save-as-image) from a link you write.\n\n## 1. Location\nIf the user already named a location, use it. Otherwise ask one short question: \"What location should I center the brief on? (a city, neighborhood, address, or landmark works.)\"\nUse today's date automatically. Only use another date if the user names one.\n\n## 2. Research (every time, never skip)\nSearch the web for REAL, current information near the location for today: sports and games, culture and community events, today's weather, and traffic or transit disruptions.\n- Run a separate search for each category: sports, culture, community, weather, traffic and transit. Don't build the brief from one venue's listing.\n- Check the local time first. Prefer events that are on now or still ahead today. If today is quiet, add notable events from the next few days. Skip events that already finished.\n- Never invent an event, time, forecast, source, or coordinate. Leave out anything you can't verify.\n- Aim for 4 to 10 events, spread across categories. Merge repeated sessions of the same show into one event and list the times in \"when\".\n- Prefer official sources: venues, teams, city and transit agencies, weather services.\n\n## 3. Reply with the link and the data box (MANDATORY)\nYour whole reply is, in this order:\n1. One sentence with the bottom line.\n2. The link below as a markdown link titled \"Open your Local Brief infographic\".\n3. The line \"If the link doesn't open the full brief, tap Copy on this box and paste it at https://ducnv1-2000.github.io/local-brief-launcher/brief.html\", then a code block containing the same data, starting at loc= and ending at n=.\n4. The follow-up question from step 4.\nDo not draw the infographic yourself. Do not make an artifact, canvas, HTML, table, or bullet summary. The viewer does the drawing.\n\nLink format. Write it as ONE unbroken line: no line breaks and no spaces anywhere, however long it gets.\nhttps://ducnv1-2000.github.io/local-brief-launcher/brief.html#loc=...&ll=...&d=...&t=...&u=...&photo=...&s=...&w=...&e=...&e=...&n=...\n\nRules for every value:\n- Write spaces as +. Never use real spaces, parentheses, quotes, #, &, % or line breaks inside a value. Write \"and\" instead of &, and \"percent\" instead of %.\n- Plain ASCII characters only: write 21C instead of 21°C, and e instead of é.\n- n comes last: the number of e= events in the link, e.g. n=7. It lets the viewer tell whether the link got cut off.\n\nParameters:\n- loc: the place, e.g. Sydney+Opera+House,+Sydney\n- ll: the place's latitude,longitude, e.g. -33.8568,151.2153\n- d: today's date, e.g. Wednesday+30+September+2026\n- t: the local time now, e.g. 5:40+pm+AEST\n- u: km, or mi for the US and UK\n- photo: the English Wikipedia article title for the place or its city, e.g. Sydney_Opera_House\n- s: one-sentence bottom line\n- w (weather, once): key:value pairs separated by ; e.g. now:21C;high:24C;low:14C;sky:Mostly+cloudy;rain:10;src:bom.gov.au (rain is the chance of rain as a plain number)\n- e (one per event, repeat e= for each): key:value pairs separated by ; with these keys:\n  - cat: sports, culture, community or transit\n  - title, venue, when (human-readable, e.g. Today+7:30+pm)\n  - start and end: ISO time with UTC offset, e.g. 2026-10-04T19:30+11:00. Only when the time is known.\n  - at: the venue's own latitude,longitude. Optional: only when you are sure of it, because the viewer looks up venues by name. Never reuse ll for a different venue.\n  - src: the source's domain and path, without https:// and without any ? part, e.g. nrl.com/tickets\n  - note: under 15 words\n  - check:1 if only a secondary or conflicting source backs it\n  Example: e=cat:sports;title:Twins+vs+Rangers;venue:Target+Field,+Minneapolis;when:Today+2:10+pm;start:2026-09-27T14:10-05:00;at:44.9817,-93.2776;src:mlb.com;note:Regular-season+game\n\n## 4. Follow-up\nEnd with: \"Want me to change the location, date, or categories?\" For any change, redo the research as needed and write a new link and data box.\n";
 
   document.getElementById("prompt-text").textContent = PROMPT;
 

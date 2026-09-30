@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEWS-BOT Local Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+<style>
+:root{--navy:#0d1f3c;--navy2:#16325e;--amber:#f5a524;--ink:#16202e;--dim:#5b6676;--line:#dfe4ec;--paper:#f2f4f8}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:#0a1426;color:var(--ink);font:15px/1.45 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 12px 40px}
+a{color:#1f5fbf}
+button{font:inherit;cursor:pointer}
+.bar{position:sticky;top:0;z-index:2000;display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:1080px;margin:0 auto;padding:10px 0;background:#0a1426}
+.bar .home{color:#fff;font:800 18px/1 "Barlow Condensed",sans-serif;letter-spacing:.06em;text-decoration:none}
+.bar .home b{color:var(--amber)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.actions button{border:0;border-radius:8px;padding:9px 14px;font:600 14px Barlow,sans-serif;background:#223454;color:#fff}
+.actions button.primary{background:var(--amber);color:#1b1204}
+.actions button:focus-visible,.card:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+.poster{max-width:1080px;margin:0 auto;background:var(--paper);overflow:hidden}
+.mast{position:relative;color:#fff;background:#0d1f3c center/cover no-repeat;min-height:290px;padding:30px 34px 26px;display:flex;justify-content:space-between;gap:24px}
+.mast::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,18,38,.9) 0%,rgba(8,18,38,.5) 48%,rgba(8,18,38,.88) 100%)}
+.mast>*{position:relative}
+.logo{margin:0;font:800 92px/.88 "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.005em}
+.logo span{display:block;color:var(--amber)}
+.tagline{margin:16px 0 0;font:600 13px/1.7 Barlow,sans-serif;letter-spacing:.32em;text-transform:uppercase;color:#a9c8ff}
+.cats{align-self:flex-start;border-left:3px solid var(--amber);padding-left:14px;font:600 12px/1.95 Barlow,sans-serif;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}
+.credit{position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(255,255,255,.72)}
+.credit a{color:inherit}
+.ribbon{background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;text-align:center;padding:14px 20px;font:700 32px/1.15 "Barlow Condensed",sans-serif;border-top:3px solid var(--amber)}
+.dateline{text-align:center;padding:12px 20px 0;font:700 21px/1.2 "Barlow Condensed",sans-serif;color:var(--navy);letter-spacing:.02em}
+.dateline small{display:block;margin-top:2px;font:500 12.5px Barlow,sans-serif;color:var(--dim);letter-spacing:0}
+.sum{margin:12px 22px 0;padding:11px 16px;background:#fff;border-radius:8px;font-size:15.5px;text-align:center;color:#253041}
+
+.top{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:16px;padding:16px 22px}
+.bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 22px 16px}
+.card{position:relative;background:#fff;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(13,31,60,.08),0 6px 18px rgba(13,31,60,.08);cursor:pointer;transition:box-shadow .15s}
+.card.hi{box-shadow:0 0 0 3px var(--amber),0 6px 18px rgba(13,31,60,.16)}
+.chead{background:var(--c);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 14px;font:800 22px/1 "Barlow Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase}
+.chead svg{width:26px;height:26px;flex:none}
+.cbody{position:relative;padding:12px 16px 14px;flex:1;display:flex;flex-direction:column;gap:7px}
+.hl{margin:0;font:700 23px/1.1 "Barlow Condensed",sans-serif;color:var(--ink)}
+.note{margin:0;font-size:14.5px;color:#2d3846}
+.row{display:flex;gap:8px;align-items:flex-start;font-size:14.5px;color:#253041}
+.row svg{width:18px;height:18px;flex:none;margin-top:2px;color:var(--c)}
+.num{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;margin-right:7px;border-radius:11px;background:var(--c,var(--navy));color:#fff;font:700 12px/1 Barlow,sans-serif;vertical-align:3px}
+.badge{align-self:flex-start;padding:3px 9px;border-radius:999px;font:700 11px/1.4 Barlow,sans-serif;letter-spacing:.08em;text-transform:uppercase;background:#eef1f5;color:var(--dim)}
+.badge:empty{display:none}
+.badge.now{background:#e03c31;color:#fff}.badge.next{background:#fff1d6;color:#8a5a00}.badge.end{background:#e8ebf0;color:#8a93a0}
+.check{font-size:12.5px;color:#a3281e;font-weight:600}
+.more{margin-top:4px;padding-top:9px;border-top:1px dashed var(--line);display:grid;gap:7px;font-size:14px}
+.more div{display:flex;align-items:flex-start}
+.more div .num{flex:none;margin-top:-1px}
+.links{margin-top:auto;padding-top:6px;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px}
+.links a{text-decoration:none}
+.wm{position:absolute;right:-16px;bottom:-16px;width:120px;height:120px;color:var(--c);opacity:.07;pointer-events:none}
+.wm svg{width:100%;height:100%}
+.card.empty{cursor:default}.card.empty .hl{color:var(--dim);font-size:20px}
+
+.mapcell{position:relative;min-height:440px;border-radius:10px;overflow:hidden;background:#dde3ea;box-shadow:0 1px 2px rgba(13,31,60,.08),0 6px 18px rgba(13,31,60,.08)}
+#map{position:absolute;inset:0}
+.north{position:absolute;top:10px;right:10px;z-index:500;background:#fff;border-radius:8px;padding:5px 8px 4px;text-align:center;font:800 13px/1 "Barlow Condensed",sans-serif;color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.north svg{display:block;width:14px;height:14px;margin:0 auto 1px}
+.nomap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--dim)}
+.pinwrap{background:none;border:0}
+.pin{position:absolute;transform:translate(-50%,-50%);min-width:28px;height:28px;padding:0 7px;border-radius:14px;background:var(--c);color:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;white-space:nowrap;font:700 12.5px/1 Barlow,sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.pin.hi{box-shadow:0 0 0 4px var(--amber),0 2px 6px rgba(0,0,0,.35)}
+.homepin{position:absolute;left:-12px;top:-30px;width:24px;height:24px;background:#e03c31;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.leaflet-tooltip.plabel,.leaflet-tooltip.here{border:0;border-radius:6px;padding:4px 8px;font:700 12.5px/1.2 Barlow,sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.3);color:#fff}
+.leaflet-tooltip.plabel{background:var(--navy)}
+.leaflet-tooltip.here{background:#e03c31;text-align:center}
+.leaflet-tooltip.plabel small,.leaflet-tooltip.here small{display:block;font-weight:500;opacity:.9}
+.leaflet-tooltip.plabel::before,.leaflet-tooltip.here::before{display:none}
+.pop{font:14px/1.4 Barlow,sans-serif;min-width:180px}
+.pop b{display:block;margin-bottom:6px;font-size:15px}
+.pop div{display:flex;align-items:flex-start;margin-top:5px;cursor:pointer}
+
+.wt .wxrow{display:flex;align-items:center;gap:14px}
+.wt .wxicon{width:58px;height:58px;color:#e59a00;flex:none}
+.wt .wxicon svg{width:100%;height:100%}
+.wt .temp{font:800 56px/1 "Barlow Condensed",sans-serif;color:var(--c)}
+.wt .sky{font:700 18px/1.15 "Barlow Condensed",sans-serif}
+.wt .sep{height:1px;background:var(--line);margin:6px 0}
+.tr{display:flex;align-items:flex-start;gap:4px;font-size:14.5px}
+.tr .num{flex:none}
+
+.nearby{margin:0 22px 18px;padding:12px 16px;background:#fff;border-radius:10px}
+.nearby h4{margin:0 0 8px;font:800 17px "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--navy)}
+.nearby ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:7px 18px}
+.nearby li{display:flex;align-items:flex-start;cursor:pointer;font-size:14px}
+.nearby li .num{flex:none}
+
+.foot{background:linear-gradient(135deg,#081328,#132a52);color:#fff;text-align:center;padding:26px 20px 18px}
+.foot .big{font:600 40px/1.1 "Barlow Condensed",sans-serif;letter-spacing:.08em}
+.foot .rule{width:80px;height:3px;background:var(--amber);margin:12px auto}
+.foot .small{font:600 12px Barlow,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:#a9c8ff}
+.foot .src{margin:16px auto 0;max-width:900px;font-size:11.5px;line-height:1.6;color:#b8c4d8}
+.foot .src a{color:#dbe6f8}
+
+.landing{max-width:640px;margin:48px auto;padding:26px;background:var(--paper);border-radius:12px}
+.landing .logo{font-size:56px;color:var(--navy)}
+.landing p{font-size:16px}
+.landing textarea{width:100%;min-height:150px;padding:12px;border:1px solid #c9d2de;border-radius:8px;font:13px/1.5 ui-monospace,Menlo,monospace}
+.landing .btns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.landing button{border:0;border-radius:8px;padding:10px 16px;font:600 15px Barlow,sans-serif;background:var(--navy);color:#fff}
+.landing button.primary{background:var(--amber);color:#1b1204}
+.err{color:#a3281e;font-weight:600}
+.loading{margin:90px 0;text-align:center;color:#fff;font:700 24px "Barlow Condensed",sans-serif;letter-spacing:.04em}
+.warnbar{max-width:1080px;margin:0 auto 10px;padding:10px 14px;border-radius:8px;background:#fff1d6;color:#5c3d00;font-weight:600}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:3000;background:#16202e;color:#fff;padding:10px 16px;border-radius:8px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+#busy{position:fixed;inset:0;z-index:2500;background:rgba(10,20,38,.82);color:#fff;display:flex;align-items:center;justify-content:center;font:700 20px "Barlow Condensed",sans-serif;letter-spacing:.06em}
+body.export{overflow:hidden}
+body.export .poster{width:1080px;max-width:none}
+
+@media(max-width:820px){
+  body:not(.export) .mast{flex-direction:column;min-height:0;padding:24px 20px 22px}
+  body:not(.export) .logo{font-size:60px}
+  body:not(.export) .tagline{font-size:11px;letter-spacing:.24em}
+  body:not(.export) .cats{border-left:0;border-top:3px solid var(--amber);padding:8px 0 0;white-space:normal;line-height:1.7}
+  body:not(.export) .ribbon{font-size:25px}
+  body:not(.export) .top,body:not(.export) .bottom{grid-template-columns:1fr;padding-left:14px;padding-right:14px}
+  body:not(.export) .mapcell{order:-1;min-height:340px}
+  body:not(.export) .sum,body:not(.export) .nearby{margin-left:14px;margin-right:14px}
+  body:not(.export) .foot .big{font-size:28px}
+  body:not(.export) .cats{display:none}
+}
+@media(max-width:520px){
+  .bar .home{display:none}
+  .bar{justify-content:flex-end}
+  .actions button{padding:8px 11px;font-size:13.5px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="bar" id="bar" hidden>
+  <a class="home" href="./">NEWS-BOT <b>LOCAL BRIEF</b></a>
+  <div class="actions">
+    <button class="primary" id="save" type="button">Save image</button>
+    <button id="share" type="button">Share</button>
+    <button id="copy" type="button">Copy link</button>
+  </div>
+</div>
+<div id="app"></div>
+<div id="toast" role="status" hidden></div>
+<div id="busy" hidden>Preparing your image…</div>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => "&#" + c.charCodeAt(0) + ";");
+const ICON = {
+  sports: '<circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18M3.6 8.5h16.8M3.6 15.5h16.8"/>',
+  culture: '<path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/>',
+  community: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M15.5 14.2c3 .2 5.5 2.4 5.5 5.8"/>',
+  transit: '<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M8 17v3M16 17v3"/><circle cx="8.5" cy="14" r=".8"/><circle cx="15.5" cy="14" r=".8"/>',
+  weather: '<circle cx="8" cy="8" r="3"/><path d="M8 2.5V3.8M2.5 8h1.3M4.2 4.2l.9.9M11.8 4.2l-.9.9"/><path d="M9 20h8a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.4 1.2A2.9 2.9 0 0 0 9 20z"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  cloud: '<path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.3 1.5A3.3 3.3 0 0 0 7 18z"/>',
+  rain: '<path d="M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.3 1.5A3.3 3.3 0 0 0 7 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+  storm: '<path d="M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.3 1.5A3.3 3.3 0 0 0 7 15z"/><path d="M12.5 15l-2 3.5h3l-2 3.5"/>',
+  snow: '<path d="M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.3 1.5A3.3 3.3 0 0 0 7 15z"/><path d="M8 19h.01M12 20h.01M16 19h.01M10 22h.01M14 22h.01"/>',
+  fog: '<path d="M4 8h16M3 12h18M5 16h14M7 20h10"/>',
+  wind: '<path d="M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/>',
+  north: '<path d="M12 2l6 18-6-4-6 4z" fill="currentColor" stroke="none"/>'
+};
+const svg = (k, fill) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k] || ""}</svg>`;
+const CAT = {
+  sports: { name: "Sports", c: "#d63b30" },
+  culture: { name: "Culture", c: "#6d3fb0" },
+  community: { name: "Community", c: "#c9760a" },
+  transit: { name: "Traffic & Transit", c: "#1f6fd1" },
+  weather: { name: "Weather & Traffic", c: "#18794e" }
+};
+const ALIAS = { sport: "sports", game: "sports", games: "sports", match: "sports", arts: "culture", art: "culture", music: "culture", theatre: "culture", theater: "culture", film: "culture", comedy: "culture", museum: "culture", events: "community", event: "community", family: "community", festival: "community", market: "community", traffic: "transit", transport: "transit", travel: "transit", roads: "transit", road: "transit" };
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
+const EXAMPLE = "loc=Sydney+Opera+House,+Sydney&ll=-33.8568,151.2153&d=Wednesday+30+September+2026&t=5:40+pm+AEST&u=km&photo=Sydney_Opera_House" +
+  "&s=My+Fair+Lady+plays+the+Joan+Sutherland+Theatre+tonight,+no+major+match+is+on+in+Sydney+today,+and+Grand+Final+week+builds+toward+Sunday." +
+  "&w=now:21°C;high:24°C;low:14°C;sky:Mostly+cloudy;rain:10;src:bom.gov.au" +
+  "&e=cat:culture;title:My+Fair+Lady;venue:Joan+Sutherland+Theatre,+Sydney+Opera+House;when:Today+1:00+pm+and+7:30+pm;start:2026-09-30T19:30+10:00;at:-33.8568,151.2153;src:opera.org.au/productions/my-fair-lady-sydney;note:Opera+Australia+production,+runs+to+31+Oct" +
+  "&e=cat:community;title:School-holiday+family+shows;venue:Forecourt,+Sydney+Opera+House;when:Daily+through+early+October;at:-33.8568,151.2153;src:sydneyoperahouse.com/whats-on;note:Programs+in+the+Studio,+Utzon+Room+and+Forecourt" +
+  "&e=cat:sports;title:NRL+Fan+Fest;venue:Martin+Place,+Sydney;when:Thu+1+and+Fri+2+Oct,+11+am+to+3+pm;start:2026-10-01T11:00+10:00;end:2026-10-01T15:00+10:00;at:-33.8677,151.2101;src:nrl.com;note:Free+ticketed+fan+event" +
+  "&e=cat:sports;title:NRL+Grand+Final:+Roosters+v+Knights;venue:Accor+Stadium,+Sydney+Olympic+Park;when:Sun+4+Oct,+7:30+pm;start:2026-10-04T19:30+11:00;at:-33.8474,151.0634;src:nrl.com/tickets;note:Sold+out.+Official+resale+on+Ticketmaster" +
+  "&e=cat:culture;title:Great+Opera+Hits;venue:Sydney+Opera+House;when:From+Sun+4+Oct;at:-33.8568,151.2153;src:sydneyoperahouse.com;note:Opera+Australia,+runs+to+26+Oct" +
+  "&e=cat:transit;title:School+holidays:+busier+ferries+and+foreshore;venue:Circular+Quay;when:Through+early+October;src:transport.nsw.gov.au;note:Long-weekend+traffic+builds+Fri+2+and+Mon+5+Oct" +
+  "&e=cat:transit;title:Daylight+saving+starts;when:Sun+4+Oct,+2+am;note:Clocks+go+forward+one+hour";
+
+function kv(s) {
+  const o = {};
+  String(s || "").split(";").forEach(seg => {
+    const i = seg.indexOf(":");
+    if (i > 0) o[seg.slice(0, i).trim().toLowerCase()] = seg.slice(i + 1).trim();
+  });
+  return o;
+}
+const fixIso = s => {
+  if (!s) return null;
+  s = s.trim().replace(/^(\d{4}-\d{2}-\d{2}T\d{1,2}:\d{2}(?::\d{2})?)\s+(\d{2}:?\d{2})$/, "$1+$2");
+  if (!/T\d/.test(s)) return null;
+  const v = Date.parse(s);
+  return isNaN(v) ? null : v;
+};
+const nums = s => String(s || "").split(",").map(x => parseFloat(x)).filter(x => !isNaN(x));
+
+function parse(raw) {
+  let str = String(raw || "").trim();
+  if (!str) return null;
+  const h = str.indexOf("#");
+  if (h >= 0) str = str.slice(h + 1);
+  str = str.replace(/^\s*[`]+|[`]+\s*$/g, "").replace(/\s*\n\s*/g, "&");
+  if ((str.match(/\)/g) || []).length > (str.match(/\(/g) || []).length) str = str.replace(/\)+\s*$/, "");
+  const P = new URLSearchParams(str);
+  const loc = (P.get("loc") || "").trim();
+  if (!loc) return null;
+  const ll = nums(P.get("ll"));
+  const D = {
+    loc, lat: ll.length === 2 ? ll[0] : null, lon: ll.length === 2 ? ll[1] : null,
+    date: P.get("d") || "", asOf: P.get("t") || "", mi: (P.get("u") || "").toLowerCase() === "mi",
+    summary: P.get("s") || "", photo: P.get("photo") || "", items: [], weather: null,
+    expected: parseInt(P.get("n"), 10) || 0, received: P.getAll("e").length
+  };
+  const short = loc.split(",")[0].trim().toLowerCase();
+  const deg = t => String(t || "").trim().replace(/^(-?\d+(?:\.\d+)?)\s*°?\s*([CF])$/i, (m, n, u) => n + "°" + u.toUpperCase());
+  if (P.get("w")) {
+    const w = kv(P.get("w"));
+    D.weather = { now: deg(w.now), high: deg(w.high), low: deg(w.low), sky: w.sky || "", rain: (w.rain || "").replace(/[^0-9.]/g, ""), src: w.src || "" };
+  }
+  const seen = new Map();
+  P.getAll("e").forEach(e => {
+    const f = kv(e);
+    if (!f.title) return;
+    let cat = (f.cat || "").toLowerCase().trim();
+    cat = ALIAS[cat] || cat;
+    if (cat === "weather") {
+      if (!D.weather) D.weather = { now: f.temp || "", high: "", low: "", sky: f.title, rain: "", src: f.src || "" };
+      return;
+    }
+    if (!CAT[cat] || cat === "weather") cat = "community";
+    const at = nums(f.at);
+    const it = { cat, title: f.title, venue: f.venue || "", when: f.when || "", note: f.note || "", src: f.src || "",
+      s: fixIso(f.start), e: fixIso(f.end), lat: at.length === 2 ? at[0] : null, lon: at.length === 2 ? at[1] : null,
+      check: /^(1|yes|true)$/i.test(f.check || "") };
+    if (it.lat != null && D.lat != null) {
+      const same = Math.abs(it.lat - D.lat) < 1e-4 && Math.abs(it.lon - D.lon) < 1e-4;
+      const mentions = (it.venue + " " + it.title).toLowerCase().includes(short);
+      if (same && !mentions) it.lat = it.lon = null;
+    }
+    if (it.lat != null && D.lat != null && dist(D, it, false) > 250) it.lat = it.lon = null;
+    const key = cat + "|" + it.title.toLowerCase() + "|" + it.venue.toLowerCase();
+    if (seen.has(key)) {
+      const m = seen.get(key);
+      if (it.when && !m.when.includes(it.when)) m.when = m.when ? m.when + " · " + it.when : it.when;
+      if (it.s && (!m.s || it.s < m.s)) { m.s = it.s; m.e = it.e; }
+      return;
+    }
+    seen.set(key, it);
+    D.items.push(it);
+  });
+  return D;
+}
+
+const rad = x => x * Math.PI / 180;
+function dist(a, b, units = true) {
+  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lon - a.lon) / 2) ** 2;
+  const km = 12742 * Math.asin(Math.sqrt(h));
+  return units && D0 && D0.mi ? km * 0.621371 : km;
+}
+let D0 = null, map = null, tiles = null, markers = {}, byN = {}, timer = null;
+const fmtD = d => d < 0.05 ? "Here" : (d < 10 ? d.toFixed(1) : Math.round(d)) + (D0.mi ? " mi" : " km");
+const dOf = it => it.lat != null && D0.lat != null ? dist(D0, it) : null;
+
+function status(it, now) {
+  let { s, e } = it;
+  if (s && !e) e = s + 72e5;
+  if (!s && !e) return { k: "info", o: 1, t: "" };
+  if (now >= e) return { k: "end", o: 5, t: "Ended" };
+  if (!s || now >= s) return { k: "now", o: 0, t: s ? "On now" : "In effect" };
+  const m = Math.round((s - now) / 6e4), dd = Math.round(m / 1440);
+  if (m < 1440) return { k: "next", o: 2, t: m < 1 ? "Starting now" : m < 60 ? `Starts in ${m} min` : `Starts in ${m / 60 | 0}h ${m % 60}m` };
+  return { k: "later", o: 3, t: `In ${dd} day${dd > 1 ? "s" : ""}` };
+}
+const badge = it => `<span class="badge" data-b="${it.n}"></span>`;
+function updBadges() {
+  const now = Date.now();
+  document.querySelectorAll("[data-b]").forEach(el => {
+    const st = status(byN[el.dataset.b], now);
+    el.textContent = st.t;
+    el.className = "badge " + st.k;
+  });
+}
+const srcUrl = s => !s ? "" : /^https?:\/\//i.test(s) ? s : "https://" + s.replace(/^\/+/, "");
+const srcName = s => String(s || "").replace(/^https?:\/\//i, "").replace(/^www\./, "").split("/")[0];
+const mapsUrl = it => {
+  const place = it.venue || it.title || "";
+  const q = it.lat != null ? it.lat + "," + it.lon : place.toLowerCase().includes(D0.loc.toLowerCase()) ? place : [place, D0.loc].filter(Boolean).join(", ");
+  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+};
+const row = (icon, text) => `<div class="row">${svg(icon)}<span>${esc(text)}</span></div>`;
+
+function cardHTML(slot) {
+  const k = CAT[slot.cat];
+  if (!slot.items.length) {
+    return `<article class="card empty" style="--c:${k.c}"><div class="chead">${svg(slot.cat)}<span>${k.name}</span></div>
+      <div class="cbody"><p class="hl">Nothing verifiable found nearby today</p><p class="note">The search didn't turn up a confirmed ${k.name.toLowerCase()} listing near ${esc(D0.loc.split(",")[0])}.</p></div>
+      <div class="wm">${svg(slot.cat)}</div></article>`;
+  }
+  const [m, ...rest] = slot.items;
+  const d = dOf(m);
+  const where = [m.venue, d != null ? fmtD(d) : ""].filter(Boolean).join(" · ");
+  const links = [m.src ? `<a href="${esc(srcUrl(m.src))}" target="_blank" rel="noopener">Source: ${esc(srcName(m.src))}</a>` : "",
+    `<a href="${esc(mapsUrl(m))}" target="_blank" rel="noopener">Directions ↗</a>`].join("");
+  return `<article class="card" tabindex="0" data-n="${m.n}" style="--c:${k.c}">
+    <div class="chead">${svg(slot.cat)}<span>${k.name}</span></div>
+    <div class="cbody">
+      <h3 class="hl"><span class="num">${m.n}</span>${esc(m.title)}</h3>
+      ${m.note ? `<p class="note">${esc(m.note)}</p>` : ""}
+      ${m.when ? row("cal", m.when) : ""}${where ? row("pin", where) : ""}
+      ${badge(m)}${m.check ? `<span class="check">Unconfirmed · check the source</span>` : ""}
+      ${rest.length ? `<div class="more">${rest.map(r => `<div data-n="${r.n}"><span class="num">${r.n}</span><span><b>${esc(r.title)}</b>${r.when ? " · " + esc(r.when) : ""}</span></div>`).join("")}</div>` : ""}
+      <div class="links">${links}</div>
+    </div>
+    <div class="wm">${svg(slot.cat)}</div></article>`;
+}
+
+function skyIcon(sky) {
+  const s = (sky || "").toLowerCase();
+  if (/thunder|storm/.test(s)) return "storm";
+  if (/snow|sleet/.test(s)) return "snow";
+  if (/rain|shower|drizzle/.test(s)) return "rain";
+  if (/fog|mist|haze|smoke/.test(s)) return "fog";
+  if (/partly|mostly sunny|some sun|sun and cloud|mix/.test(s)) return "weather";
+  if (/cloud|overcast|grey|gray/.test(s)) return "cloud";
+  if (/sun|clear|fine/.test(s)) return "sun";
+  if (/wind|breez|gust/.test(s)) return "wind";
+  return "weather";
+}
+
+function wtHTML(transit) {
+  const k = CAT.weather, w = D0.weather;
+  const hl = w ? [w.high && "High " + w.high, w.low && "low " + w.low, w.rain && w.rain + "% chance of rain"].filter(Boolean).join(", ") : "";
+  const wx = w ? `<div class="wxrow"><div class="wxicon">${svg(skyIcon(w.sky))}</div><div>${w.now ? `<div class="temp">${esc(w.now)}</div>` : ""}<div class="sky">${esc(w.sky)}</div></div></div>
+      ${hl ? `<p class="note">${esc(hl)}</p>` : ""}${w.src ? `<div class="links"><a href="${esc(srcUrl(w.src))}" target="_blank" rel="noopener">Source: ${esc(srcName(w.src))}</a></div>` : ""}`
+    : `<p class="note">No verified forecast was found for this location.</p>`;
+  const tr = transit.length ? transit.map(t => `<div class="tr" data-n="${t.n}"><span class="num" style="--c:${CAT.transit.c}">${t.n}</span><span><b>${esc(t.title)}</b>${t.when ? " · " + esc(t.when) : ""}${t.note ? `<br>${esc(t.note)}` : ""}${t.check ? ` <span class="check">Unconfirmed</span>` : ""}</span></div>`).join("")
+    : `<p class="note">No traffic or transit disruptions found nearby.</p>`;
+  return `<article class="card wt" style="--c:${k.c}"><div class="chead">${svg("weather")}<span>${k.name}</span></div>
+    <div class="cbody">${wx}<div class="sep"></div>${tr}</div><div class="wm">${svg("transit")}</div></article>`;
+}
+
+function layout(items) {
+  const now = Date.now();
+  const sorted = items.slice().sort((a, b) => status(a, now).o - status(b, now).o || (a.s || 9e15) - (b.s || 9e15));
+  const ended = sorted.filter(it => status(it, now).k === "end");
+  const groups = {};
+  sorted.filter(it => !ended.includes(it)).forEach(it => (groups[it.cat] = groups[it.cat] || []).push(it));
+  const transit = groups.transit || [];
+  let slots = ["sports", "culture", "community"].filter(k => groups[k]).map(k => ({ cat: k, items: groups[k].slice() }));
+  while (slots.length < 3) {
+    const big = slots.filter(s => s.items.length >= 2).sort((a, b) => b.items.length - a.items.length)[0];
+    if (!big) break;
+    slots.splice(slots.indexOf(big) + 1, 0, { cat: big.cat, items: big.items.splice(Math.ceil(big.items.length / 2)) });
+  }
+  ["sports", "culture", "community"].forEach(k => { if (slots.length < 3 && !slots.some(s => s.cat === k)) slots.push({ cat: k, items: [] }); });
+  const overflow = [];
+  slots = slots.slice(0, 3).map(s => { overflow.push(...s.items.slice(3)); return { cat: s.cat, items: s.items.slice(0, 3) }; });
+  const tShown = transit.slice(0, 3);
+  overflow.push(...transit.slice(3), ...ended);
+  let n = 0;
+  [...slots.flatMap(s => s.items), ...tShown, ...overflow].forEach(it => { it.n = ++n; byN[n] = it; });
+  return { slots, tShown, overflow };
+}
+
+function render(D) {
+  D0 = D; byN = {}; markers = {};
+  if (map) { map.remove(); map = null; }
+  const { slots, tShown, overflow } = layout(D.items);
+  const short = D.loc.split(",")[0].trim();
+  const present = [...new Set(D.items.map(i => i.cat))].map(k => CAT[k].name.replace("Traffic & Transit", "Transport"));
+  const catList = [...new Set(["Community", "Events", ...present, D.weather ? "Weather" : null].filter(Boolean))].slice(0, 6);
+  const sources = [...new Set([...D.items.map(i => i.src), D.weather && D.weather.src].filter(Boolean).map(s => srcName(s)))];
+  document.title = "Local Brief · " + D.loc;
+  $("bar").hidden = false;
+  const cut = D.expected && D.received < D.expected
+    ? `<p class="warnbar">This link was cut off: ${D.received} of ${D.expected} events came through. For the full brief, tap Copy on the data box in your chat and paste it on the <a href="brief.html">brief page</a>.</p>` : "";
+  const geo = D.items.some(i => i.geo) ? " Venue locations: © OpenStreetMap contributors, via Photon." : "";
+  $("app").innerHTML = cut + `<div class="poster" id="poster">
+    <header class="mast" id="mast">
+      <div><h1 class="logo">News-Bot<span>Local Brief</span></h1><p class="tagline">Your location. Your news.<br>Anywhere in the world.</p></div>
+      <div class="cats">${catList.map(esc).join("<br>")}<br>And more</div>
+      <div class="credit" id="credit"></div>
+    </header>
+    <div class="ribbon">${esc(D.loc)}</div>
+    <div class="dateline">${esc(D.date)}${D.asOf ? `<small>As of ${esc(D.asOf)}</small>` : ""}</div>
+    ${D.summary ? `<p class="sum">${esc(D.summary)}</p>` : ""}
+    <section class="top">${cardHTML(slots[0])}<div class="mapcell" id="mapcell"><div id="map" role="region" aria-label="Map of nearby events"></div><div class="north">${svg("north")}N</div></div>${cardHTML(slots[1])}</section>
+    <section class="bottom">${cardHTML(slots[2])}${wtHTML(tShown)}</section>
+    ${overflow.length ? `<section class="nearby"><h4>Also today and nearby</h4><ol>${overflow.map(o => `<li data-n="${o.n}"><span class="num" style="--c:${CAT[o.cat].c}">${o.n}</span><span><b>${esc(o.title)}</b>${o.when ? " · " + esc(o.when) : ""}${o.venue ? " · " + esc(o.venue.split(",")[0]) : ""} <span class="badge" data-b="${o.n}"></span></span></li>`).join("")}</ol></section>` : ""}
+    <footer class="foot"><div class="big">Local news. Global audience.</div><div class="rule"></div><div class="small">One station. Every listener. Their local news.</div>
+      <div class="src">${sources.length ? "Sources: " + sources.map(esc).join(" · ") + ". " : ""}Gathered by AI web search${D.asOf ? " as of " + esc(D.asOf) : ""}. Distances are straight-line. Check the source before you travel.${geo}</div></footer>
+  </div>`;
+  initMap(short);
+  loadPhoto(D);
+  updBadges();
+  clearInterval(timer); timer = setInterval(updBadges, 60000);
+}
+
+function initMap(short) {
+  const cell = $("mapcell");
+  if (!window.L || D0.lat == null) {
+    cell.innerHTML = `<div class="nomap"><div>${D0.lat == null ? "No coordinates were given for this location." : "The map couldn't load."}<br><a href="${esc(mapsUrl({ venue: D0.loc }))}" target="_blank" rel="noopener">Open in Google Maps ↗</a></div></div>`;
+    return;
+  }
+  map = L.map("map", { scrollWheelZoom: false, fadeAnimation: false, zoomSnap: 0.5 });
+  tiles = L.tileLayer(ESRI, { maxZoom: 19, crossOrigin: "anonymous", attribution: "Tiles &copy; Esri" }).addTo(map);
+  L.control.scale({ imperial: D0.mi, metric: !D0.mi, position: "bottomleft" }).addTo(map);
+  const groups = {};
+  Object.values(byN).forEach(it => {
+    if (it.lat == null) return;
+    const key = it.lat.toFixed(4) + "," + it.lon.toFixed(4);
+    (groups[key] = groups[key] || { lat: it.lat, lon: it.lon, items: [] }).items.push(it);
+  });
+  const home = L.marker([D0.lat, D0.lon], { icon: L.divIcon({ className: "pinwrap", html: '<div class="homepin"></div>', iconSize: [0, 0] }), zIndexOffset: 1000, keyboard: false }).addTo(map);
+  home.bindTooltip(esc(short), { permanent: true, direction: "bottom", offset: [0, 2], className: "here" });
+  const list = Object.values(groups), labels = list.length <= 6, pts = [[D0.lat, D0.lon]];
+  list.forEach(g => {
+    const atHome = dist(D0, g, false) < 0.05;
+    const color = g.items.length > 1 ? "#0d1f3c" : CAT[g.items[0].cat].c;
+    const txt = g.items.length > 3 ? g.items[0].n + "+" + (g.items.length - 1) : g.items.map(i => i.n).join("·");
+    const mk = L.marker([g.lat, g.lon], { icon: L.divIcon({ className: "pinwrap", html: `<div class="pin" style="--c:${color}${atHome ? ";transform:translate(8px,-48px)" : ""}">${txt}</div>`, iconSize: [0, 0] }) }).addTo(map);
+    const venue = (g.items[0].venue || g.items[0].title).split(",")[0];
+    mk.bindPopup(`<div class="pop"><b>${esc(venue)}</b>${g.items.map(i => `<div data-n="${i.n}"><span class="num" style="--c:${CAT[i.cat].c}">${i.n}</span><span>${esc(i.title)}${i.when ? " · " + esc(i.when) : ""}</span></div>`).join("")}</div>`, { offset: atHome ? [18, -44] : [0, -8] });
+    if (labels && !atHome) mk.bindTooltip(`${esc(venue)}<small>${fmtD(dOf(g.items[0]))}</small>`, { permanent: true, direction: "right", offset: [14, 0], className: "plabel" });
+    mk.on("click", () => setHi(g.items.map(i => i.n)));
+    g.items.forEach(i => { markers[i.n] = mk; });
+    pts.push([g.lat, g.lon]);
+  });
+  const near = pts.filter((p, i) => i === 0 || dist(D0, { lat: p[0], lon: p[1] }, false) <= 5);
+  const view = near.length >= 2 ? near : pts;
+  fitAll = () => {
+    map.invalidateSize();
+    if (view.length === 1) map.setView(view[0], 15);
+    else map.fitBounds(view, { padding: [50, 50], maxZoom: 16 });
+  };
+  fitAll();
+  setTimeout(fitAll, 250);
+}
+let fitAll = () => {};
+
+function setHi(ns) {
+  const set = new Set((ns || []).map(String));
+  document.querySelectorAll(".card[data-n]").forEach(c => {
+    const own = [c.dataset.n, ...[...c.querySelectorAll("[data-n]")].map(x => x.dataset.n)];
+    c.classList.toggle("hi", own.some(n => set.has(n)));
+  });
+  document.querySelectorAll(".pin").forEach(p => p.classList.remove("hi"));
+  (ns || []).forEach(n => { const mk = markers[n]; const el = mk && mk.getElement(); if (el) el.querySelector(".pin")?.classList.add("hi"); });
+}
+function focusItem(n) {
+  const it = byN[n];
+  if (!it) return;
+  setHi([n]);
+  const mk = markers[n];
+  if (mk && map) {
+    map.setView(mk.getLatLng(), Math.max(map.getZoom(), 15));
+    mk.openPopup();
+    const r = $("mapcell").getBoundingClientRect();
+    if (r.bottom < 60 || r.top > innerHeight - 60) $("mapcell").scrollIntoView({ behavior: "smooth", block: "center" });
+  } else {
+    toast("No map pin for this one. Use Directions on the card.");
+  }
+}
+
+async function loadPhoto(D) {
+  const base = "https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&piprop=thumbnail|name&pithumbsize=1600&format=json&origin=*&redirects=1";
+  const tries = [];
+  if (D.photo) tries.push(base + "&titles=" + encodeURIComponent(D.photo.replace(/ /g, "_")));
+  tries.push(base + "&generator=search&gsrlimit=1&gsrsearch=" + encodeURIComponent(D.loc));
+  const city = D.loc.split(",").slice(-1)[0].trim();
+  if (city && city !== D.loc) tries.push(base + "&titles=" + encodeURIComponent(city));
+  for (const u of tries) {
+    try {
+      const j = await (await fetch(u)).json();
+      const p = Object.values((j.query && j.query.pages) || {}).find(p => p.thumbnail);
+      if (p) {
+        $("mast").style.backgroundImage = `url("${p.thumbnail.source}")`;
+        $("credit").innerHTML = `<a href="https://en.wikipedia.org/wiki/File:${encodeURIComponent(p.pageimage)}" target="_blank" rel="noopener">Photo: Wikimedia Commons</a>`;
+        return;
+      }
+    } catch (e) {}
+  }
+}
+
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 2600);
+}
+const slug = () => (D0 ? D0.loc.split(",")[0] : "brief").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function tilesSettled() {
+  if (!tiles) return;
+  for (let i = 0; i < 40 && tiles.isLoading && tiles.isLoading(); i++) await wait(100);
+  await wait(200);
+}
+async function imageBlob() {
+  if (!window.htmlToImage) throw new Error("no lib");
+  $("busy").hidden = false;
+  document.body.classList.add("export");
+  try {
+    if (map) { fitAll(); await wait(150); fitAll(); }
+    await tilesSettled();
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const node = $("poster");
+    const opt = { pixelRatio: 2, backgroundColor: "#f2f4f8", width: node.offsetWidth, height: node.offsetHeight, style: { margin: "0" },
+      filter: n => !(n.classList && n.classList.contains("leaflet-control-zoom")) };
+    try { await htmlToImage.toBlob(node, opt); } catch (e) {}
+    return await htmlToImage.toBlob(node, opt);
+  } finally {
+    document.body.classList.remove("export");
+    if (map) { fitAll(); }
+    $("busy").hidden = true;
+  }
+}
+async function saveImage() {
+  try {
+    const blob = await imageBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `local-brief-${slug()}.png`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast("Image saved");
+  } catch (e) { toast("Couldn't make the image. Try a screenshot instead."); }
+}
+async function share() {
+  const title = "Local Brief · " + (D0 ? D0.loc : "");
+  try {
+    if (navigator.canShare) {
+      const blob = await imageBlob();
+      const file = new File([blob], `local-brief-${slug()}.png`, { type: "image/png" });
+      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title, text: title }); return; }
+    }
+    if (navigator.share) { await navigator.share({ title, url: location.href }); return; }
+    await copyLink();
+  } catch (e) { if (e && e.name !== "AbortError") toast("Sharing isn't available here. Use Copy link."); }
+}
+async function copyLink() {
+  try { await navigator.clipboard.writeText(location.href); toast("Link copied"); }
+  catch (e) { toast("Copy the address from your browser's address bar."); }
+}
+
+function landing(msg) {
+  D0 = null;
+  if (map) { map.remove(); map = null; }
+  $("bar").hidden = true;
+  document.title = "NEWS-BOT Local Brief";
+  $("app").innerHTML = `<section class="landing">
+    <h1 class="logo">News-Bot<span>Local Brief</span></h1>
+    <p>This page turns your assistant's research into an infographic. Open it from the link your assistant writes, or paste the link or brief data below.</p>
+    ${msg ? `<p class="err">${esc(msg)}</p>` : ""}
+    <label for="paste" class="note">Brief link or data (it starts with <code>loc=</code>)</label>
+    <textarea id="paste" spellcheck="false"></textarea>
+    <div class="btns"><button class="primary" id="go" type="button">Show my brief</button><button id="clip" type="button">Paste from clipboard</button></div>
+    <p><a href="./">Start a new brief</a> · <a href="#example">See an example</a></p>
+  </section>`;
+  $("go").onclick = () => {
+    const raw = $("paste").value, D = parse(raw);
+    if (!D) { landing("That doesn't look like a brief. Paste the whole link, or the data that starts with loc="); return; }
+    let q = raw.trim(); const h = q.indexOf("#"); if (h >= 0) q = q.slice(h + 1);
+    location.hash = q.replace(/\s*\n\s*/g, "&");
+  };
+  $("clip").onclick = async () => {
+    try { $("paste").value = await navigator.clipboard.readText(); } catch (e) { toast("Your browser blocked clipboard access. Paste into the box instead."); }
+  };
+}
+
+async function photon(q, near) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 3500);
+  try {
+    const u = "https://photon.komoot.io/api/?limit=1&q=" + encodeURIComponent(q) + (near && near.lat != null ? `&lat=${near.lat}&lon=${near.lon}` : "");
+    const j = await (await fetch(u, { signal: ctl.signal })).json();
+    const f = j.features && j.features[0];
+    if (!f) return null;
+    const p = { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] };
+    if (near && near.lat != null && dist(near, p, false) > 60) return null;
+    return p;
+  } catch (e) { return null; } finally { clearTimeout(t); }
+}
+async function placeItems(D) {
+  if (D.lat == null) { const p = await photon(D.loc, null); if (p) { D.lat = p.lat; D.lon = p.lon; } }
+  const short = D.loc.split(",")[0].trim().toLowerCase();
+  const city = D.loc.split(",").slice(-1)[0].trim();
+  const cache = {};
+  const jobs = D.items.filter(it => it.lat == null && it.venue && it.cat !== "transit").map(async it => {
+    const v = it.venue.trim();
+    if (D.lat != null && v.toLowerCase().includes(short)) { it.lat = D.lat; it.lon = D.lon; return; }
+    const q = v.toLowerCase().includes(city.toLowerCase()) ? v : v + ", " + city;
+    cache[q] = cache[q] || photon(q, D);
+    const p = await cache[q];
+    if (p) { it.lat = p.lat; it.lon = p.lon; it.geo = true; }
+  });
+  await Promise.race([Promise.all(jobs), wait(5000)]);
+}
+async function route() {
+  const h = decodeURIComponent(location.hash.slice(1, 9)) === "example" ? EXAMPLE : location.hash.slice(1);
+  if (!h) return landing("");
+  const D = parse(h);
+  if (!D) return landing("This link looks incomplete. Copy the whole link from your chat and paste it here.");
+  $("bar").hidden = true;
+  $("app").innerHTML = `<p class="loading">Building your brief…</p>`;
+  await placeItems(D);
+  render(D);
+}
+$("save").onclick = saveImage;
+$("share").onclick = share;
+$("copy").onclick = copyLink;
+document.addEventListener("click", e => {
+  if (e.target.closest("a")) return;
+  const pop = e.target.closest(".pop [data-n]");
+  if (pop) return focusItem(+pop.dataset.n);
+  const sub = e.target.closest(".more [data-n], .tr[data-n], .nearby [data-n]");
+  if (sub) return focusItem(+sub.dataset.n);
+  const card = e.target.closest(".card[data-n]");
+  if (card) focusItem(+card.dataset.n);
+});
+document.addEventListener("keydown", e => {
+  const card = e.target.closest && e.target.closest(".card[data-n]");
+  if (card && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); focusItem(+card.dataset.n); }
+});
+addEventListener("hashchange", route);
+route();
+})();
+</script>
+</body>
+</html>
