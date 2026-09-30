@@ -88,6 +88,7 @@ button{font:inherit;cursor:pointer}
 .wt .wxicon{width:58px;height:58px;color:#e59a00;flex:none}
 .wt .wxicon svg{width:100%;height:100%}
 .wt .temp{font:800 56px/1 "Barlow Condensed",sans-serif;color:var(--c)}
+.wt .temp small{margin-left:8px;font:700 22px "Barlow Condensed",sans-serif;color:var(--dim)}
 .wt .sky{font:700 18px/1.15 "Barlow Condensed",sans-serif}
 .wt .sep{height:1px;background:var(--line);margin:6px 0}
 .tr{display:flex;align-items:flex-start;gap:4px;font-size:14.5px}
@@ -345,10 +346,20 @@ function skyIcon(sky) {
   return "weather";
 }
 
+const inUS = (lat, lon) => lat != null && (
+  (lat > 24 && lat < 50 && lon > -125 && lon < -66) || (lat > 51 && lat < 72 && lon > -170 && lon < -129) || (lat > 18 && lat < 23 && lon > -161 && lon < -154));
+function temp(t) {
+  const m = String(t || "").match(/^(-?\d+(?:\.\d+)?)°([CF])$/);
+  if (!m) return t ? { main: t, alt: "" } : null;
+  const v = +m[1], c = m[2] === "C" ? v : (v - 32) * 5 / 9, f = m[2] === "F" ? v : v * 9 / 5 + 32;
+  return inUS(D0.lat, D0.lon) ? { main: Math.round(f) + "°F", alt: Math.round(c) + "°C" } : { main: Math.round(c) + "°C", alt: Math.round(f) + "°F" };
+}
+const both = t => { const x = temp(t); return x ? x.main + (x.alt ? ` (${x.alt})` : "") : ""; };
+
 function wtHTML(transit) {
-  const k = CAT.weather, w = D0.weather;
-  const hl = w ? [w.high && "High " + w.high, w.low && "low " + w.low, w.rain && w.rain + "% chance of rain"].filter(Boolean).join(", ") : "";
-  const wx = w ? `<div class="wxrow"><div class="wxicon">${svg(skyIcon(w.sky))}</div><div>${w.now ? `<div class="temp">${esc(w.now)}</div>` : ""}<div class="sky">${esc(w.sky)}</div></div></div>
+  const k = CAT.weather, w = D0.weather, now = w && temp(w.now);
+  const hl = w ? [w.high && "High " + both(w.high), w.low && "low " + both(w.low), w.rain && w.rain + "% chance of rain"].filter(Boolean).join(", ") : "";
+  const wx = w ? `<div class="wxrow"><div class="wxicon">${svg(skyIcon(w.sky))}</div><div>${now ? `<div class="temp">${esc(now.main)}${now.alt ? `<small>${esc(now.alt)}</small>` : ""}</div>` : ""}<div class="sky">${esc(w.sky)}</div></div></div>
       ${hl ? `<p class="note">${esc(hl)}</p>` : ""}${w.src ? `<div class="links"><a href="${esc(srcUrl(w.src))}" target="_blank" rel="noopener">Source: ${esc(srcName(w.src))}</a></div>` : ""}`
     : `<p class="note">No verified forecast was found for this location.</p>`;
   const tr = transit.length ? transit.map(t => `<div class="tr" data-n="${t.n}"><span class="num" style="--c:${CAT.transit.c}">${t.n}</span><span><b>${esc(t.title)}</b>${t.when ? " · " + esc(t.when) : ""}${t.note ? `<br>${esc(t.note)}` : ""}${t.check ? ` <span class="check">Unconfirmed</span>` : ""}</span></div>`).join("")
@@ -431,7 +442,7 @@ function initMap(short) {
   });
   const home = L.marker([D0.lat, D0.lon], { icon: L.divIcon({ className: "pinwrap", html: '<div class="homepin"></div>', iconSize: [0, 0] }), zIndexOffset: 1000, keyboard: false }).addTo(map);
   home.bindTooltip(esc(short), { permanent: true, direction: "bottom", offset: [0, 2], className: "here" });
-  const list = Object.values(groups), labels = list.length <= 6, pts = [[D0.lat, D0.lon]];
+  const list = Object.values(groups), labels = list.length <= 15, pts = [[D0.lat, D0.lon]];
   list.forEach(g => {
     const atHome = dist(D0, g, false) < 0.05;
     const color = g.items.length > 1 ? "#0d1f3c" : CAT[g.items[0].cat].c;
@@ -439,7 +450,7 @@ function initMap(short) {
     const mk = L.marker([g.lat, g.lon], { icon: L.divIcon({ className: "pinwrap", html: `<div class="pin" style="--c:${color}${atHome ? ";transform:translate(8px,-48px)" : ""}">${txt}</div>`, iconSize: [0, 0] }) }).addTo(map);
     const venue = (g.items[0].venue || g.items[0].title).split(",")[0];
     mk.bindPopup(`<div class="pop"><b>${esc(venue)}</b>${g.items.map(i => `<div data-n="${i.n}"><span class="num" style="--c:${CAT[i.cat].c}">${i.n}</span><span>${esc(i.title)}${i.when ? " · " + esc(i.when) : ""}</span></div>`).join("")}</div>`, { offset: atHome ? [18, -44] : [0, -8] });
-    if (labels && !atHome) mk.bindTooltip(`${esc(venue)}<small>${fmtD(dOf(g.items[0]))}</small>`, { permanent: true, direction: "right", offset: [14, 0], className: "plabel" });
+    if (labels && !atHome) mk.bindTooltip(`${esc(venue)}<small>${fmtD(dOf(g.items[0]))}</small>`, { permanent: true, direction: "right", offset: [Math.max(14, txt.length * 3.5 + 10), 0], className: "plabel" });
     mk.on("click", () => setHi(g.items.map(i => i.n)));
     g.items.forEach(i => { markers[i.n] = mk; });
     pts.push([g.lat, g.lon]);
@@ -451,10 +462,27 @@ function initMap(short) {
     if (view.length === 1) map.setView(view[0], 15);
     else map.fitBounds(view, { padding: [50, 50], maxZoom: 16 });
   };
+  map.on("zoomend moveend resize", () => requestAnimationFrame(declutter));
   fitAll();
   setTimeout(fitAll, 250);
 }
 let fitAll = () => {};
+
+function declutter() {
+  const box = el => { const r = el.getBoundingClientRect(); return { l: r.left + 2, r: r.right - 2, t: r.top + 2, b: r.bottom - 2 }; };
+  const hit = (a, b) => !(a.r < b.l || a.l > b.r || a.b < b.t || a.t > b.b);
+  const taken = [...document.querySelectorAll("#map .pin, #map .homepin")].map(box);
+  const tips = [...document.querySelectorAll("#map .leaflet-tooltip")];
+  tips.sort((a, b) => b.classList.contains("here") - a.classList.contains("here"));
+  tips.forEach(t => { t.style.visibility = ""; });
+  const m = $("map").getBoundingClientRect();
+  const outside = r => r.l < m.left || r.r > m.right || r.t < m.top || r.b > m.bottom;
+  tips.forEach(t => {
+    const r = box(t);
+    if (!t.classList.contains("here") && (outside(r) || taken.some(x => hit(r, x)))) t.style.visibility = "hidden";
+    else taken.push(r);
+  });
+}
 
 function setHi(ns) {
   const set = new Set((ns || []).map(String));
