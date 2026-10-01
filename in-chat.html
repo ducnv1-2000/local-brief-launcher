@@ -225,7 +225,7 @@
 
   const encoded = encodeURIComponent(PROMPT);
     // Temporary Chat ignores ChatGPT memory, which otherwise guesses the location from past chats.
-  document.getElementById("btn-chatgpt").href = "https://chatgpt.com/?temporary-chat=true&q=" + encoded;
+  document.getElementById("btn-chatgpt").href = "https://chatgpt.com/?q=" + encoded;
 
   const copyBtn = document.getElementById("copy-btn");
   copyBtn.addEventListener("click", async () => {
